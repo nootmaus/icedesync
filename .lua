@@ -36,8 +36,8 @@ toggleGradient.Parent = toggleButton
 
 
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 200, 0, 300)
-mainFrame.Position = UDim2.new(0.5, -100, 0.5, -150)
+mainFrame.Size = UDim2.new(0, 200, 0, 340)
+mainFrame.Position = UDim2.new(0.5, -100, 0.5, -170)
 mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 mainFrame.BackgroundTransparency = 0.05
 mainFrame.BorderSizePixel = 0
@@ -141,6 +141,7 @@ local fpsButton, fpsStroke = createButton("Fly", "🎯")
 local speedButton, speedStroke = createButton("Speed Boost", "⚡")
 local floorButton, floorStroke = createButton("3rd Floor", "🏢")
 local extraButton, extraStroke = createButton("Invisible - Desync", "🔄")
+local lagButton, lagStroke = createButton("Lag Server (Need Aura)", "💥")
 
 ----------------------------------------------------------------------
 -- desync -- кстати а че ты код чекаешь хуесос мелкий?
@@ -288,6 +289,96 @@ LocalPlayer.CharacterAdded:Connect(function()
     extraStroke.Color = Color3.fromRGB(100, 200, 255)
 end)
 
+----------------------------------------------------------------------
+-- Lag Server (Dark Matter Slap)
+----------------------------------------------------------------------
+
+local RunService = game:GetService("RunService")
+local lagServerActive = false
+local lagServerConnection
+
+local function keepDarkMatterEquipped()
+    if lagServerConnection then return end
+    
+    lagServerConnection = RunService.Heartbeat:Connect(function()
+        if not lagServerActive then return end
+        
+        local character = LocalPlayer.Character
+        if not character then return end
+        
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        local backpack = LocalPlayer:FindFirstChild("Backpack")
+        
+        if not humanoid or not backpack then return end
+        
+        local darkMatterSlap = backpack:FindFirstChild("Dark Matter Slap") or character:FindFirstChild("Dark Matter Slap")
+        
+        if darkMatterSlap and darkMatterSlap.Parent == backpack then
+            humanoid:EquipTool(darkMatterSlap)
+        end
+    end)
+end
+
+local function stopKeepingEquipped()
+    if lagServerConnection then
+        lagServerConnection:Disconnect()
+        lagServerConnection = nil
+    end
+    
+    local character = LocalPlayer.Character
+    if character then
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid:UnequipTools()
+        end
+    end
+end
+
+lagButton.MouseButton1Click:Connect(function()
+    lagServerActive = not lagServerActive
+    
+    local character = LocalPlayer.Character
+    local backpack = LocalPlayer:FindFirstChild("Backpack")
+    
+    if not character or not backpack then
+        warn("❌ Персонаж или инвентарь не найден")
+        lagServerActive = false
+        return
+    end
+    
+    local darkMatterSlap = backpack:FindFirstChild("Dark Matter Slap") or character:FindFirstChild("Dark Matter Slap")
+    
+    if not darkMatterSlap then
+        warn("❌ Dark Matter Slap не найден в инвентаре")
+        lagServerActive = false
+        lagButton.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+        lagStroke.Color = Color3.fromRGB(100, 200, 255)
+        return
+    end
+    
+    if lagServerActive then
+        keepDarkMatterEquipped()
+        lagButton.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+        lagStroke.Color = Color3.fromRGB(0, 255, 100)
+        print("✅ Dark Matter Slap постоянно экипирован")
+    else
+        stopKeepingEquipped()
+        lagButton.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+        lagStroke.Color = Color3.fromRGB(100, 200, 255)
+        print("❌ Dark Matter Slap убран")
+    end
+end)
+
+LocalPlayer.CharacterAdded:Connect(function()
+    lagServerActive = false
+    if lagServerConnection then
+        lagServerConnection:Disconnect()
+        lagServerConnection = nil
+    end
+    lagButton.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+    lagStroke.Color = Color3.fromRGB(100, 200, 255)
+end)
+
 local telegramBtn = Instance.new("TextButton")
 telegramBtn.Size = UDim2.new(1, 0, 0, 32)
 telegramBtn.Text = "📱 Telegram"
@@ -329,7 +420,7 @@ toggleButton.MouseButton1Click:Connect(function()
     if uiVisible then
         mainFrame.Size = UDim2.new(0, 0, 0, 0)
         mainFrame:TweenSize(
-            UDim2.new(0, 200, 0, 300),
+            UDim2.new(0, 200, 0, 340),
             Enum.EasingDirection.Out,
             Enum.EasingStyle.Back,
             0.3,
